@@ -8,14 +8,11 @@ actions:
     event: 1
     operation: 4
     data: >-
-      const MARKER_SUMMARY = "【🤖 AI Summary】";
-      const MARKER_CHAT = "【💬 Chat History】";
-      const MARKER_ORIG = "【📄 Original Abstract】";
-      const MARKER_TLDR = "【📝 TLDR】";
-      const MARKER_GLANCE = "【🧭 速览区】";
-      const MARKER_DETAIL = "【🧩 论文详细总结区】";
-      const MARKER_GLANCE_LEGACY = "【🧭 Glance】";
-      const MARKER_DETAIL_LEGACY = "【🧩 论文详细总结】";
+      const MARKER_CHAT = "## 💬 Chat History";
+      const MARKER_ORIG = "## 📄 Original Abstract";
+      const MARKER_TLDR = "## 📝 TLDR";
+      const MARKER_GLANCE = "## 🧭 速览区";
+      const MARKER_DETAIL = "## 🧩 论文详细总结区";
       const BR_PLACEHOLDER = /__BR__/g;
       const AUTO_NOTE_TAG = "dpr-ai-summary-note";
       const RETRY_DELAYS = [300, 800, 1500];
@@ -47,14 +44,11 @@ actions:
 
       function hasAnyMarker(text) {
         return (
-          text.includes(MARKER_SUMMARY) ||
           text.includes(MARKER_CHAT) ||
           text.includes(MARKER_ORIG) ||
           text.includes(MARKER_TLDR) ||
           text.includes(MARKER_GLANCE) ||
-          text.includes(MARKER_GLANCE_LEGACY) ||
-          text.includes(MARKER_DETAIL) ||
-          text.includes(MARKER_DETAIL_LEGACY)
+          text.includes(MARKER_DETAIL)
         );
       }
 
@@ -137,26 +131,20 @@ actions:
         const text = normalizeText(lineText).trim();
         if (!text) return "";
         const markerText = [
-          MARKER_SUMMARY,
           MARKER_CHAT,
           MARKER_ORIG,
           MARKER_TLDR,
           MARKER_GLANCE,
-          MARKER_GLANCE_LEGACY,
           MARKER_DETAIL,
-          MARKER_DETAIL_LEGACY,
         ].map((v) =>
           normalizeText(v).trim(),
         );
         const map = {
-          [markerText[0]]: "🤖 AI Summary",
-          [markerText[1]]: "💬 Chat History",
-          [markerText[2]]: "📄 Original Abstract",
-          [markerText[3]]: "📝 TLDR",
-          [markerText[4]]: "🧭 速览区",
-          [markerText[5]]: "🧭 速览区",
-          [markerText[6]]: "🧩 论文详细总结区",
-          [markerText[7]]: "🧩 论文详细总结区",
+          [markerText[0]]: "💬 Chat History",
+          [markerText[1]]: "📄 Original Abstract",
+          [markerText[2]]: "📝 TLDR",
+          [markerText[3]]: "🧭 速览区",
+          [markerText[4]]: "🧩 论文详细总结区",
         };
         for (const marker of markerText) {
           if (text.startsWith(marker)) {
@@ -209,9 +197,6 @@ actions:
         if (!text) {
           return "📝 文章内容";
         }
-        if (text.includes("🤖") || text.includes("ai summary")) {
-          return "🤖 AI Summary";
-        }
         if (text.includes("📝 tldr") || text.includes("tldr")) {
           return "📝 TLDR";
         }
@@ -230,9 +215,7 @@ actions:
         if (
           text.includes("📄") ||
           text.includes("original abstract") ||
-          text.includes("原文摘要") ||
-          text.includes("abstract") ||
-          text === "摘要"
+          text.includes("原文摘要")
         ) {
           return "📄 Original Abstract";
         }
@@ -273,7 +256,6 @@ actions:
 
         const fixedHeading = canonicalizeSectionTitle(text);
         const fixedHeadings = new Set([
-          "🤖 AI Summary",
           "💬 Chat History",
           "📄 Original Abstract",
           "📝 TLDR",
@@ -327,14 +309,6 @@ actions:
         const text = normalizeSourceText(fullText);
         const headingSpecs = [
           {
-            title: "🤖 AI Summary",
-            regex: /#{1,6}\s*🤖\s*AI\s*Summary/i,
-          },
-          {
-            title: "🤖 AI Summary",
-            regex: /#{1,6}\s*AI\s*Summary/i,
-          },
-          {
             title: "💬 Chat History",
             regex: /#{1,6}\s*💬\s*Chat\s*History/i,
           },
@@ -344,11 +318,11 @@ actions:
           },
           {
             title: "📄 Original Abstract",
-            regex: /#{1,6}\s*📄\s*(?:Original\s*Abstract|原文摘要|Abstract|摘要)/i,
+            regex: /#{1,6}\s*📄\s*(?:Original\s*Abstract|原文摘要)/i,
           },
           {
             title: "📄 Original Abstract",
-            regex: /#{1,6}\s*(?:Original\s*Abstract|原文摘要|Abstract|摘要)/i,
+            regex: /#{1,6}\s*(?:Original\s*Abstract|原文摘要)/i,
           },
           {
             title: "📝 TLDR",
@@ -438,15 +412,13 @@ actions:
       function hasPotentialSectionHeading(text) {
         const normalized = normalizeSourceText(text);
         const detectPatterns = [
-          /#{1,6}\s*🤖\s*AI\s*Summary/i,
           /#{1,6}\s*💬\s*Chat\s*History/i,
-          /#{1,6}\s*📄\s*(?:Original\s*Abstract|原文摘要|Abstract|摘要)/i,
+          /#{1,6}\s*📄\s*(?:Original\s*Abstract|原文摘要)/i,
           /#{1,6}\s*📝\s*TLDR/i,
           /#{1,6}\s*🧭\s*速览区/i,
           /#{1,6}\s*🧩\s*论文详细总结(?:区|（自动生成）)?/i,
-          /#{1,6}\s*AI\s*Summary/i,
           /#{1,6}\s*Chat\s*History/i,
-          /#{1,6}\s*(?:Original\s*Abstract|原文摘要|Abstract|摘要)/i,
+          /#{1,6}\s*(?:Original\s*Abstract|原文摘要)/i,
           /#{1,6}\s*TLDR/i,
           /#{1,6}\s*速览区/i,
           /#{1,6}\s*论文详细总结(?:区|（自动生成）)?/i,
@@ -457,14 +429,11 @@ actions:
       function splitSectionsByMarkers(fullText) {
         const cleaned = normalizeSourceText(fullText);
         const marks = [
-          { marker: MARKER_SUMMARY, title: "🤖 AI Summary" },
           { marker: MARKER_CHAT, title: "💬 Chat History" },
           { marker: MARKER_ORIG, title: "📄 Original Abstract" },
           { marker: MARKER_TLDR, title: "📝 TLDR" },
           { marker: MARKER_GLANCE, title: "🧭 速览区" },
-          { marker: MARKER_GLANCE_LEGACY, title: "🧭 速览区" },
           { marker: MARKER_DETAIL, title: "🧩 论文详细总结区" },
-          { marker: MARKER_DETAIL_LEGACY, title: "🧩 论文详细总结区" },
         ];
         const matched = marks
           .map((m) => ({
@@ -1030,7 +999,7 @@ actions:
         newNote.setNote(noteHtml);
         await newNote.saveTx();
 
-        return `✅ [${escapeHtml(title)}] 已自动创建 AI Summary 条目笔记`;
+        return `✅ [${escapeHtml(title)}] 已自动创建摘要条目笔记`;
       }
 
       const results = [];
@@ -1042,7 +1011,7 @@ actions:
     shortcut: ''
     enabled: true
     menu: ''
-    name: Process AI Summary
+    name: Process DPR Summary Note
     showInMenu:
       item: false
       collection: false
