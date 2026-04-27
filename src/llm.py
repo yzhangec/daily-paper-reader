@@ -570,61 +570,8 @@ class LLMClient:
         top_n: Optional[int] = None,
         model: Optional[str] = None,
     ) -> dict:
-        """重排序接口（默认不支持，只有 BLT 提供）。"""
-        raise NotImplementedError("rerank 仅支持 BltClient，请使用 BltClient 调用。")
-
-
-class DeepSeekClient(LLMClient):
-    def __init__(self, api_key: str, model: str, base_url: str = "https://api.deepseek.com"):
-        super().__init__(api_key=api_key, model=model, base_url=base_url)
-
-
-class SiliconflowClient(LLMClient):
-    def __init__(self, api_key: str, model: str, base_url: str = "https://api.siliconflow.cn/v1"):
-        super().__init__(api_key=api_key, model=model, base_url=base_url)
-
-
-class CSTCloudClient(LLMClient):
-    """CSTCloud（科技云）提供商，OpenAI Chat Completions 兼容接口。
-
-    默认基址：https://uni-api.cstcloud.cn/v1
-    使用示例：model="CSTCloud/gpt-oss-120b" 或 "CSTCloud/qwen3:235b"
-    建议环境变量：CSTCLOUD_API_KEY
-    """
-    def __init__(self, api_key: str, model: str, base_url: str = "https://uni-api.cstcloud.cn/v1"):
-        super().__init__(api_key=api_key, model=model, base_url=base_url)
-
-
-SliconflowClient = SiliconflowClient
-
-
-class OllamaClient(LLMClient):
-    def __init__(self, api_key: str, model: str, base_url: str = "http://localhost:11111/v1"):
-        super().__init__(api_key=api_key, model=model, base_url=base_url)
-
-
-class BltClient(LLMClient):
-    """BLT（柏拉图）网关，OpenAI Chat Completions 兼容接口。"""
-    def __init__(self, api_key: str, model: str, base_url: str = None):
-        legacy_base = base_url or os.getenv('BLT_API_BASE', DEFAULT_BLT_BASE_URL)
-        primary_base = (
-            os.getenv("LLM_PRIMARY_BASE_URL")
-            or os.getenv("BLT_PRIMARY_BASE_URL")
-            or os.getenv("GPTBEST_BASE_URL")
-            or PRIMARY_LLM_BASE_URL
-        ).strip() or PRIMARY_LLM_BASE_URL
-        super().__init__(api_key=api_key, model=model, base_url=primary_base)
-        self._base_urls = self._normalize_base_urls([primary_base, legacy_base])
-
-    def rerank(
-        self,
-        query: str,
-        documents: List[str],
-        top_n: Optional[int] = None,
-        model: Optional[str] = None,
-    ) -> dict:
         """
-        调用柏拉图 Rerank 接口（/v1/rerank）。
+        调用 OpenAI-compatible Rerank 接口（/v1/rerank 或 base_url/rerank）。
 
         :param query: 查询文本
         :param documents: 待排序文档列表
@@ -688,12 +635,13 @@ class BltClient(LLMClient):
                     "documents": len(documents),
                     "top_n": payload.get("top_n"),
                 })
-                if e.response is not None:
+                response = getattr(e, "response", None)
+                if response is not None:
                     try:
-                        print("错误详情(JSON):", e.response.json())
+                        print("错误详情(JSON):", response.json())
                     except ValueError:
                         try:
-                            print("错误详情(TEXT):", e.response.text[:500])
+                            print("错误详情(TEXT):", response.text[:500])
                         except Exception:
                             pass
                 else:
@@ -704,6 +652,48 @@ class BltClient(LLMClient):
             raise last_error
         raise RuntimeError("rerank 未命中可用 base")
 
+
+class DeepSeekClient(LLMClient):
+    def __init__(self, api_key: str, model: str, base_url: str = "https://api.deepseek.com"):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
+class SiliconflowClient(LLMClient):
+    def __init__(self, api_key: str, model: str, base_url: str = "https://api.siliconflow.cn/v1"):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
+class CSTCloudClient(LLMClient):
+    """CSTCloud（科技云）提供商，OpenAI Chat Completions 兼容接口。
+
+    默认基址：https://uni-api.cstcloud.cn/v1
+    使用示例：model="CSTCloud/gpt-oss-120b" 或 "CSTCloud/qwen3:235b"
+    建议环境变量：CSTCLOUD_API_KEY
+    """
+    def __init__(self, api_key: str, model: str, base_url: str = "https://uni-api.cstcloud.cn/v1"):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
+SliconflowClient = SiliconflowClient
+
+
+class OllamaClient(LLMClient):
+    def __init__(self, api_key: str, model: str, base_url: str = "http://localhost:11111/v1"):
+        super().__init__(api_key=api_key, model=model, base_url=base_url)
+
+
+class BltClient(LLMClient):
+    """BLT（柏拉图）网关，OpenAI Chat Completions 兼容接口。"""
+    def __init__(self, api_key: str, model: str, base_url: str = None):
+        legacy_base = base_url or os.getenv('BLT_API_BASE', DEFAULT_BLT_BASE_URL)
+        primary_base = (
+            os.getenv("LLM_PRIMARY_BASE_URL")
+            or os.getenv("BLT_PRIMARY_BASE_URL")
+            or os.getenv("GPTBEST_BASE_URL")
+            or PRIMARY_LLM_BASE_URL
+        ).strip() or PRIMARY_LLM_BASE_URL
+        super().__init__(api_key=api_key, model=model, base_url=primary_base)
+        self._base_urls = self._normalize_base_urls([primary_base, legacy_base])
 
 def parse_provider_model(model_str: str) -> Tuple[str, str]:
     """

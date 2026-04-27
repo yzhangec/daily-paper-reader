@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-# 使用柏拉图 Rerank API 对候选论文做重排序（简化版）。
+# 使用 OpenAI-compatible Rerank API 对候选论文做重排序（简化版）。
 
 import argparse
 import json
@@ -8,7 +8,7 @@ import random
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional, Tuple
 
-from llm import BltClient
+from llm import DEFAULT_BLT_BASE_URL, LLMClient
 
 SCRIPT_DIR = os.path.dirname(__file__)
 ROOT_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, ".."))
@@ -238,7 +238,7 @@ def rrf_merge(scores: Dict[int, float], rank_idx: int, orig_idx: int) -> None:
 
 
 def process_file(
-  reranker: BltClient,
+  reranker: LLMClient,
   input_path: str,
   output_path: str,
   top_n: Optional[int],
@@ -411,8 +411,13 @@ def main() -> None:
   parser.add_argument(
     "--rerank-model",
     type=str,
-    default=os.getenv("BLT_RERANK_MODEL") or os.getenv("RERANK_MODEL") or "qwen3-reranker-4b",
-    help="BLT Rerank 模型名称（默认 qwen3-reranker-4b）。",
+    default=(
+      os.getenv("RERANK_MODEL")
+      or os.getenv("Reranker_LLM_MODEL")
+      or os.getenv("BLT_RERANK_MODEL")
+      or "qwen3-reranker-4b"
+    ),
+    help="Rerank 模型名称（默认 qwen3-reranker-4b）。",
   )
 
   args = parser.parse_args()
@@ -429,11 +434,22 @@ def main() -> None:
     log(f"[WARN] 输入文件不存在（今天可能没有新论文）：{input_path}，将跳过 Step 3。")
     return
 
-  api_key = os.getenv("BLT_API_KEY")
+  api_key = (
+    os.getenv("RERANK_API_KEY")
+    or os.getenv("Reranker_LLM_API_KEY")
+    or os.getenv("BLT_API_KEY")
+  )
   if not api_key:
-    raise RuntimeError("缺少 BLT_API_KEY 环境变量，无法调用 BLT Rerank API。")
+    raise RuntimeError("缺少 RERANK_API_KEY 或 BLT_API_KEY 环境变量，无法调用 Rerank API。")
 
-  reranker = BltClient(api_key=api_key, model=args.rerank_model)
+  base_url = (
+    os.getenv("RERANK_BASE_URL")
+    or os.getenv("Reranker_LLM_BASE_URL")
+    or os.getenv("BLT_PRIMARY_BASE_URL")
+    or os.getenv("BLT_API_BASE")
+    or DEFAULT_BLT_BASE_URL
+  )
+  reranker = LLMClient(api_key=api_key, model=args.rerank_model, base_url=base_url)
   process_file(
     reranker=reranker,
     input_path=input_path,

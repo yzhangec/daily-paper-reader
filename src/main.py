@@ -194,6 +194,17 @@ def _looks_like_blt_base(base_url: str) -> bool:
 
 
 def should_skip_rerank() -> tuple[bool, str]:
+    skip_flag = _read_env_text("DPR_SKIP_RERANK").lower()
+    if skip_flag in {"1", "true", "yes", "on"}:
+        return True, "DPR_SKIP_RERANK=true"
+
+    rerank_base = _read_env_text(
+        "RERANK_BASE_URL",
+        "Reranker_LLM_BASE_URL",
+    )
+    if rerank_base:
+        return False, rerank_base
+
     primary_base = _read_env_text(
         "LLM_PRIMARY_BASE_URL",
         "BLT_PRIMARY_BASE_URL",
@@ -696,8 +707,8 @@ def main() -> None:
     skip_rerank, rerank_base = should_skip_rerank()
     if skip_rerank:
         print(
-            f"[INFO] Step 3 - Rerank 已跳过：当前主 LLM base 不属于柏拉图/BLT，"
-            f"缺少稳定 /rerank 能力。base={rerank_base}",
+            f"[INFO] Step 3 - Rerank 已跳过：未配置专用 Rerank base，"
+            f"且当前主 LLM base 不属于柏拉图/BLT。base={rerank_base}",
             flush=True,
         )
         prepare_rerank_fallback(rrf_path, rerank_path)

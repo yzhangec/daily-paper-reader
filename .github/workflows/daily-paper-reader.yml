@@ -36,9 +36,13 @@ jobs:
     env:
       BLT_API_KEY: ${{ secrets.BLT_API_KEY }}
       BLT_REWRITE_MODEL: ${{ secrets.BLT_REWRITE_MODEL }}
-      BLT_RERANK_MODEL: qwen3-reranker-4b
+      BLT_RERANK_MODEL: ${{ secrets.Reranker_LLM_MODEL || 'qwen3-reranker-4b' }}
       BLT_FILTER_MODEL: ${{ secrets.BLT_FILTER_MODEL }}
       DPR_EMBED_API_TIMEOUT: "60"
+      DPR_SKIP_RERANK: ${{ secrets.DPR_SKIP_RERANK }}
+      RERANK_API_KEY: ${{ secrets.Reranker_LLM_API_KEY }}
+      RERANK_BASE_URL: ${{ secrets.Reranker_LLM_BASE_URL }}
+      RERANK_MODEL: ${{ secrets.Reranker_LLM_MODEL }}
       LLM_PRIMARY_BASE_URL: ${{ secrets.LLM_PRIMARY_BASE_URL }}
       BLT_PRIMARY_BASE_URL: ${{ secrets.BLT_PRIMARY_BASE_URL }}
       BLT_API_BASE: ${{ secrets.BLT_PRIMARY_BASE_URL }}
